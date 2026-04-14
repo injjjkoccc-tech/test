@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>極致拉密 - 高端線上對戰</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <div id="app">
+        <div id="lobby" class="screen active">
+            <div class="glass-panel main-panel">
+                <h1 style="color:#38bdf8; letter-spacing: 5px;">RUMMIKUB</h1>
+                <input type="text" id="nickname" placeholder="輸入暱稱" maxlength="10">
+                <div class="room-options glass-panel" style="margin-bottom:1rem; padding:15px;">
+                    <p>遊玩人數</p>
+                    <div style="display:flex; justify-content:center; gap:20px; margin-top:10px;">
+                        <label><input type="radio" name="maxPlayers" value="2" checked> 2</label>
+                        <label><input type="radio" name="maxPlayers" value="3"> 3</label>
+                        <label><input type="radio" name="maxPlayers" value="4"> 4</label>
+                    </div>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                    <button id="createBtn" style="background:#38bdf8; color:#0f172a;">創建房間</button>
+                    <button id="quickJoinBtn" style="background:rgba(255,255,255,0.1); color:white;">隨機加入</button>
+                </div>
+                <div style="margin-top:10px; display:flex; gap:5px;">
+                    <input type="text" id="roomIdInput" placeholder="代碼" style="flex:1; padding:8px; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); color:white; border-radius:4px;">
+                    <button id="joinBtn" style="background:#334155; color:white;">加入</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="game-screen" class="screen">
+            <header class="game-header">
+                <div class="glass-panel" style="padding:5px 15px; border-radius:20px;">房間: <span id="roomDisplay">----</span></div>
+                <div style="display:flex; gap:10px;">
+                    <button id="readyBtn" style="background:#22c55e; color:white;">準備</button>
+                    <button onclick="location.reload()" style="background:#ef4444; color:white;">退出</button>
+                </div>
+            </header>
+
+            <main class="game-container">
+                <div class="main-layout">
+                    <aside class="chat-area glass-panel">
+                        <div id="chatMessages"></div>
+                        <div class="chat-input-row">
+                            <input type="text" id="chatInput" placeholder="說點什麼..." autocomplete="off">
+                            <button id="sendChatBtn">➲</button>
+                        </div>
+                    </aside>
+
+                    <section id="board" class="board-area"></section>
+
+                    <aside class="players-section" id="playersContainer"></aside>
+                </div>
+
+                <footer class="interaction-footer glass-panel">
+                    <div class="hand-section">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:5px; font-weight:bold;">
+                            <span>私人手牌</span>
+                            <div>
+                                <button id="sortByColor" style="font-size:0.7rem; padding:2px 8px;">顏色</button>
+                                <button id="sortByNum" style="font-size:0.7rem; padding:2px 8px;">數字</button>
+                            </div>
+                        </div>
+                        <div id="playerHand" class="tiles-grid"></div>
+                    </div>
+                    <div class="hand-section">
+                        <div style="font-weight:bold; margin-bottom:5px;">調整暫存區 (場上的牌)</div>
+                        <div id="workspace" class="tiles-grid"></div>
+                    </div>
+                </footer>
+            </main>
+
+            <div class="action-floating-bar">
+                <button id="autoPlayBtn" style="background:#f59e0b; color:white;">自動出牌</button>
+                <button id="finishBtn" style="background:#22c55e; color:white; padding:10px 30px;">確定出牌</button>
+                <button id="undoBtn" style="background:#ef4444; color:white;">還原回合</button>
+            </div>
+
+            <div id="gameAnnounce" class="announce-banner">GAME START</div>
+        </div>
+
+        <div id="modal-gameover" class="modal">
+            <div class="modal-content glass-panel">
+                <h1 id="winStatus">優勝者</h1>
+                <div style="margin-top:20px;">
+                    <button onclick="location.reload()" style="background:#38bdf8; color:#0f172a; padding:10px 30px;">回到大廳</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="game.js"></script>
+</body>
+</html>
