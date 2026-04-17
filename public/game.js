@@ -147,7 +147,7 @@ socket.on('gameStart', (data) => {
     document.getElementById('modal-gameover').style.display = 'none';
     
     // 恢復互動按鈕
-    const colors = { 'autoPlayBtn': '#f59e0b', 'finishBtn': '#22c55e', 'undoBtn': '#ef4444' };
+    const colors = { 'autoPlayBtn': '#f59e0b', 'finishBtn': '#22c55e', 'undoBtn': '#ef4444', 'sortByColor': '#38bdf8', 'sortByNum': '#38bdf8' };
     ['autoPlayBtn', 'finishBtn', 'undoBtn', 'sortByColor', 'sortByNum'].forEach(id => {
         const btn = document.getElementById(id);
         if(btn) { 
