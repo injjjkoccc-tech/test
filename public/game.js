@@ -46,22 +46,43 @@ joinBtn.onclick = () => {
     if (rId) joinGame(rId, 'join');
 };
 
+let actionQueue = [];
+
 function joinGame(roomId, action) {
     const nick = nicknameInput.value.trim();
-    if (!nick) return alert('請輸入暱稱');
-    state.nickname = nick;
-    const maxP = document.querySelector('input[name="maxPlayers"]:checked').value;
-    socket.emit('join', { nickname: nick, roomId, playerId: state.playerId, maxPlayers: maxP, action });
+    if (!nick && action !== 'rejoin') return alert('請輸入暱稱');
+    if (nick) state.nickname = nick;
+    const maxP = document.querySelector('input[name="maxPlayers"]:checked') ? document.querySelector('input[name="maxPlayers"]:checked').value : 4;
+    socket.emit('join', { nickname: state.nickname, roomId, playerId: state.playerId, maxPlayers: maxP, action });
 }
 
 socket.on('joined', (data) => {
     state.roomCode = data.roomCode;
     state.playerId = data.playerId;
     localStorage.setItem('rummikub_playerId', data.playerId);
+    localStorage.setItem('rummikub_roomId', data.roomCode);
+    localStorage.setItem('rummikub_nickname', state.nickname);
     lobby.classList.remove('active');
     gameScreen.classList.add('active');
     document.getElementById('roomDisplay').textContent = data.roomCode;
 });
+
+// INITIALIZE LOBBY
+const savedName = localStorage.getItem('rummikub_nickname');
+if (savedName) document.getElementById('nickname').value = savedName;
+const savedPlayerId = localStorage.getItem('rummikub_playerId');
+const savedRoomId = localStorage.getItem('rummikub_roomId');
+if (savedPlayerId && savedRoomId) {
+    const rejoinBtn = document.getElementById('rejoinRoomBtn');
+    if (rejoinBtn) {
+        rejoinBtn.style.display = 'block';
+        rejoinBtn.onclick = () => {
+            state.playerId = savedPlayerId;
+            state.nickname = document.getElementById('nickname').value.trim() || savedName;
+            joinGame(savedRoomId, 'rejoin');
+        };
+    }
+}
 
 socket.on('roomUpdate', (data) => {
     state.players = data.players || [];
@@ -295,6 +316,7 @@ function renderPlayers() {
         const div = document.createElement('div');
         div.className = `player-card ${p.nickname === state.turnPlayer ? 'active' : ''} ${p.isFinished ? 'finished' : ''}`;
         let icon = p.isBot ? '🤖' : (p.isHost ? '👑' : '🐱');
+        if (!p.online) icon = '🔌';
         div.innerHTML = `<span>${icon}</span><div style="flex:1"><b>${p.nickname}</b></div><span>${p.isFinished? '🏆 NO.'+p.rank : '🎴 '+p.cardCount}</span>`;
         playersContainer.appendChild(div);
     });
