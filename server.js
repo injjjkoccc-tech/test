@@ -213,6 +213,19 @@ io.on('connection', (socket) => {
         }
     });
 
+    socket.on('instantStart', () => {
+        const p = players.get(socket.id);
+        const room = rooms.get(p.roomId);
+        const player = room.players.find(pl => pl.socketId === socket.id);
+        if (player && player.isHost) {
+            if (room.countdownInterval) {
+                clearInterval(room.countdownInterval);
+                room.countdownInterval = null;
+            }
+            fillBotsAndStart(room);
+        }
+    });
+
     function fillBotsAndStart(room) {
         while (room.players.length < room.maxPlayers) {
             room.players.push({
@@ -424,10 +437,21 @@ io.on('connection', (socket) => {
     });
 
     function processPlayerWin(room, player) {
-        room.gameStarted = false;
-        io.to(room.id).emit('chat', { sender: '系統公告', message: `🏆 遊戲結束！恭喜 ${player.nickname} 獲勝！` });
-        const sortedPlayers = [...room.players].sort((a,b) => a.hand.length - b.hand.length);
-        io.to(room.id).emit('gameOver', { winner: player.nickname, allScores: sortedPlayers.map(p => ({ nickname: p.nickname, cardCount: p.hand.length })) });
+        if (player.isFinished) return;
+        player.isFinished = true;
+        player.rank = room.players.filter(p => p.isFinished).length;
+        io.to(room.id).emit('chat', { sender: '系統公告', message: `🎉 恭喜 ${player.nickname} 獲得第 ${player.rank} 名！`, icon: '📢' });
+
+        const unfinished = room.players.filter(p => !p.isFinished);
+        if (unfinished.length <= 1) {
+            if (unfinished.length === 1) { unfinished[0].isFinished = true; unfinished[0].rank = room.players.length; }
+            room.gameStarted = false;
+            const winners = room.players.map(p => ({ nickname: p.nickname, rank: p.rank })).sort((a,b) => a.rank - b.rank);
+            io.to(room.id).emit('chat', { sender: '系統公告', message: `🏆 遊戲結束！最終排名已產生。`, icon: '📢' });
+            io.to(room.id).emit('gameOver', { winner: room.players.find(p => p.rank === 1).nickname, allScores: winners });
+        } else {
+            updateTurnAndNotify(room, `${player.nickname} 完賽`);
+        }
     }
 
     socket.on('drawTile', () => {

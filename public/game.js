@@ -71,9 +71,16 @@ socket.on('roomUpdate', (data) => {
     if (!state.gameStarted && me) {
         readyBtn.style.display = 'inline-block';
         if (me.isHost) {
-            readyBtn.textContent = '開始倒數';
-            readyBtn.style.background = '#22c55e';
-            readyBtn.disabled = false;
+            const others = state.players.filter(p => !p.isHost);
+            if (others.length === 0) {
+                readyBtn.textContent = '直接開始';
+                readyBtn.style.background = '#38bdf8';
+                readyBtn.disabled = false;
+            } else {
+                readyBtn.textContent = '開始倒數';
+                readyBtn.style.background = '#22c55e';
+                readyBtn.disabled = false;
+            }
         } else {
             readyBtn.textContent = '等待房主開始...';
             readyBtn.style.background = '#94a3b8';
@@ -92,6 +99,8 @@ socket.on('roomUpdate', (data) => {
 readyBtn.onclick = () => {
     if (!readyBtn.disabled && readyBtn.textContent === '開始倒數') {
         socket.emit('startCountdown');
+    } else if (!readyBtn.disabled && readyBtn.textContent === '直接開始') {
+        socket.emit('instantStart');
     }
 };
 
@@ -152,9 +161,6 @@ function renderBoard(errorIdx = []) {
         const setDiv = document.createElement('div');
         setDiv.className = `tile-set ${errorIdx.includes(idx) ? 'error-set' : ''}`;
         set.forEach((tile, tIdx) => renderTile(tile, setDiv, 'board', idx, tIdx));
-        
-        setDiv.ondragover = (e) => e.preventDefault();
-        setDiv.ondrop = (e) => handleDrop(e, idx, 'board');
         board.appendChild(setDiv);
     });
 }
@@ -182,7 +188,14 @@ function renderTile(tile, container, source, setIdx, tileIdx) {
 // --- 拖拽核心 ---
 board.ondragover = (e) => e.preventDefault();
 board.ondrop = (e) => {
-    if (e.target === board) handleDrop(e, -1, 'board');
+    e.preventDefault();
+    const setDiv = e.target.closest('.tile-set');
+    if (setDiv) {
+        const idx = Array.from(board.children).indexOf(setDiv);
+        handleDrop(e, idx, 'board');
+    } else {
+        handleDrop(e, -1, 'board');
+    }
 };
 
 workspace.ondragover = (e) => e.preventDefault();

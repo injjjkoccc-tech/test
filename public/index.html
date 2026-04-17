@@ -53,14 +53,19 @@
                     </aside>
 
                     <div class="board-wrapper" style="position: relative; flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0;">
-                        <!-- 剩餘牌堆 (懸浮於右上角) -->
-                        <div id="deckPile" class="deck-pile" title="點擊抽牌" style="display: none;">
-                            <span class="deck-count" id="deckCountText">0</span>
-                        </div>
                         <section id="board" class="board-area"></section>
                     </div>
 
-                    <aside class="players-section" id="playersContainer"></aside>
+                    <aside class="players-section" style="display:flex; flex-direction:column; gap:10px; min-height:0;">
+                        <div id="playersContainer" style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:8px;"></div>
+                        <div class="deck-area glass-panel" style="padding:15px; text-align:center;">
+                            <h4 style="margin-bottom:10px; color:#38bdf8;">公牌疊</h4>
+                            <!-- 剩餘牌堆 -->
+                            <div id="deckPile" class="deck-pile" title="點擊抽牌" style="display: none; position:relative; margin:0 auto; top:0; right:0;">
+                                <span class="deck-count" id="deckCountText">0</span>
+                            </div>
+                        </div>
+                    </aside>
                 </div>
 
                 <footer id="interactionFooter" class="interaction-footer glass-panel" style="display: none;">
@@ -72,11 +77,11 @@
                                 <button id="sortByNum" style="font-size:0.7rem; padding:2px 8px;">數字</button>
                             </div>
                         </div>
-                        <div id="playerHand" class="tiles-grid"></div>
+                        <div id="playerHand" class="tiles-grid" style="flex:1; min-height:60px;"></div>
                     </div>
-                    <div class="hand-section">
+                    <div class="hand-section" style="flex:1;">
                         <div style="font-weight:bold; margin-bottom:5px;">調整暫存區 (場上的牌)</div>
-                        <div id="workspace" class="tiles-grid"></div>
+                        <div id="workspace" class="tiles-grid" style="flex:1; min-height:60px;"></div>
                     </div>
                 </footer>
             </main>
