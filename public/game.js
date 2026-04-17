@@ -108,6 +108,7 @@ socket.on('gameStart', (data) => {
     state.board = data.board || [];
     state.gameStarted = true;
     state.turnPlayer = data.turnPlayer;
+    state.myTurn = (state.nickname === state.turnPlayer);
     state.history = [JSON.parse(JSON.stringify({ hand: state.hand, board: state.board, tempTiles: [] }))];
     document.getElementById('deckCountText').textContent = data.deckCount || 0;
     
@@ -187,6 +188,9 @@ board.ondrop = (e) => {
 workspace.ondragover = (e) => e.preventDefault();
 workspace.ondrop = (e) => handleDrop(e, -2, 'workspace');
 
+playerHand.ondragover = (e) => e.preventDefault();
+playerHand.ondrop = (e) => handleDrop(e, -3, 'handTarget');
+
 function handleDrop(e, targetIdx, targetType) {
     e.preventDefault();
     const id = e.dataTransfer.getData('tileId');
@@ -218,8 +222,16 @@ function handleDrop(e, targetIdx, targetType) {
     if (targetType === 'board') {
         if (targetIdx === -1) state.board.push([tile]);
         else state.board[targetIdx].push(tile);
-    } else {
+    } else if (targetType === 'workspace') {
         state.tempTiles.push(tile);
+    } else if (targetType === 'handTarget') {
+        const wasInHand = state.history[0] && state.history[0].hand.find(t => t.id === tile.id);
+        if (!wasInHand) {
+            alert('這是桌面上的牌，不能收回手牌！若想調整可放至「調整暫存區」或按「還原回合」。');
+            state.tempTiles.push(tile);
+        } else {
+            state.hand.push(tile);
+        }
     }
     renderAll();
 }

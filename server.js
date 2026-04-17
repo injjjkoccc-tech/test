@@ -303,10 +303,19 @@ io.on('connection', (socket) => {
                 if (!acted) i++;
             }
         }
-        const pSets = findInitialMeldSets(player.hand);
+        const allPossibilities = findInitialMeldSets(player.hand);
+        const pSets = [];
+        const usedIdsSet = new Set();
+        allPossibilities.forEach(s => {
+            if (s.every(t => !usedIdsSet.has(t.id))) {
+                pSets.push(s);
+                s.forEach(t => usedIdsSet.add(t.id));
+            }
+        });
+        
         const score = pSets.reduce((sum, s) => sum + calculateSetScore(s), 0);
         if (pSets.length > 0 && (player.hasMeld || score >= 30)) {
-            const usedIds = pSets.flat().map(t => t.id);
+            const usedIds = Array.from(usedIdsSet);
             player.hand = player.hand.filter(t => !usedIds.includes(t.id));
             player.hasMeld = true;
             room.board.push(...pSets);
@@ -336,7 +345,7 @@ io.on('connection', (socket) => {
     function findInitialMeldSets(hand) {
         const results = [];
         const h = [...hand];
-        // 簡單 AI 尋牌邏輯 (同數不同色 / 同色連續)
+        
         const groups = {};
         h.forEach(t => { if(t.color !== 'joker') { if(!groups[t.number]) groups[t.number] = []; groups[t.number].push(t); } });
         for(const n in groups) {
@@ -344,6 +353,26 @@ io.on('connection', (socket) => {
             groups[n].forEach(t => { if(!unique.find(x => x.color === t.color)) unique.push(t); });
             if(unique.length >= 3) results.push(unique);
         }
+        
+        const colors = ['red', 'blue', 'orange', 'black'];
+        colors.forEach(col => {
+            const sameCol = h.filter(t => t.color === col).sort((a,b) => a.number - b.number);
+            const uniqueCol = [];
+            sameCol.forEach(t => { if(!uniqueCol.find(x => x.number === t.number)) uniqueCol.push(t); });
+            
+            if(uniqueCol.length >= 3) {
+                let currentRun = [uniqueCol[0]];
+                for(let i=1; i<uniqueCol.length; i++) {
+                    if (uniqueCol[i].number === currentRun[currentRun.length-1].number + 1) {
+                        currentRun.push(uniqueCol[i]);
+                    } else {
+                        if (currentRun.length >= 3) results.push([...currentRun]);
+                        currentRun = [uniqueCol[i]];
+                    }
+                }
+                if (currentRun.length >= 3) results.push([...currentRun]);
+            }
+        });
         return results;
     }
 
