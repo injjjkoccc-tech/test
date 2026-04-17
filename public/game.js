@@ -66,10 +66,34 @@ socket.on('joined', (data) => {
 socket.on('roomUpdate', (data) => {
     state.players = data.players || [];
     state.gameStarted = data.gameStarted;
+    
+    const me = state.players.find(p => p.nickname === state.nickname);
+    if (!state.gameStarted && me) {
+        readyBtn.style.display = 'inline-block';
+        if (me.isHost) {
+            const others = state.players.filter(p => !p.isHost);
+            const allReady = others.length === 0 || others.every(p => p.ready);
+            readyBtn.textContent = '遊戲開始';
+            readyBtn.style.background = allReady ? '#22c55e' : '#94a3b8';
+            readyBtn.disabled = !allReady;
+        } else {
+            readyBtn.textContent = me.ready ? '準備完成' : '準備';
+            readyBtn.style.background = me.ready ? '#f59e0b' : '#22c55e';
+            readyBtn.disabled = false;
+        }
+    } else if (state.gameStarted) {
+        readyBtn.style.display = 'none';
+        document.getElementById('deckPile').style.display = 'flex';
+        document.getElementById('interactionFooter').style.display = 'flex';
+        document.getElementById('actionFloatingBar').style.display = 'flex';
+    }
+    
     renderPlayers();
 });
 
-readyBtn.onclick = () => socket.emit('ready');
+readyBtn.onclick = () => {
+    if (!readyBtn.disabled) socket.emit('ready');
+};
 
 socket.on('gameStart', (data) => {
     state.hand = data.hand;
@@ -77,6 +101,13 @@ socket.on('gameStart', (data) => {
     state.gameStarted = true;
     state.turnPlayer = data.turnPlayer;
     state.history = [JSON.parse(JSON.stringify({ hand: state.hand, board: state.board, tempTiles: [] }))];
+    document.getElementById('deckCountText').textContent = data.deckCount || 0;
+    
+    document.getElementById('deckPile').style.display = 'flex';
+    document.getElementById('interactionFooter').style.display = 'flex';
+    document.getElementById('actionFloatingBar').style.display = 'flex';
+    readyBtn.style.display = 'none';
+    
     renderAll();
 });
 
@@ -87,6 +118,7 @@ socket.on('turnUpdate', (data) => {
     if (state.myTurn) {
         state.history = [JSON.parse(JSON.stringify({ hand: state.hand, board: state.board, tempTiles: [] }))];
     }
+    document.getElementById('deckCountText').textContent = data.deckCount || 0;
     renderAll();
 });
 
@@ -212,6 +244,15 @@ sortByNumBtn.onclick = () => {
 
 autoPlayBtn.onclick = () => socket.emit('autoPlayRequest');
 
+const deckPile = document.getElementById('deckPile');
+deckPile.onclick = () => {
+    if (!state.myTurn) return alert('不是您的回合！');
+    if (state.tempTiles.length > 0 || JSON.stringify(state.board) !== JSON.stringify(state.history[0].board)) {
+        return alert('您已經移動了桌面上的牌，須按「還原回合」或「確定出牌」！');
+    }
+    socket.emit('drawTile');
+};
+
 // --- 其他 ---
 function renderPlayers() {
     playersContainer.innerHTML = '';
@@ -243,7 +284,11 @@ socket.on('error', data => {
     alert(typeof data === 'string' ? data : data.message);
     if (data.errorIndices) renderBoard(data.errorIndices);
 });
-socket.on('tileDrawn', data => { state.hand = data.hand; renderHand(); });
+socket.on('tileDrawn', data => { 
+    state.hand = data.hand; 
+    document.getElementById('deckCountText').textContent = data.deckCount || 0;
+    renderHand(); 
+});
 socket.on('gameOver', data => {
     document.getElementById('winStatus').textContent = `優勝者：${data.winner}`;
     document.getElementById('modal-gameover').style.display = 'block';

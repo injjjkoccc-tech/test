@@ -52,12 +52,18 @@
                         </div>
                     </aside>
 
-                    <section id="board" class="board-area"></section>
+                    <div class="board-wrapper" style="position: relative; flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0;">
+                        <!-- 剩餘牌堆 (懸浮於右上角) -->
+                        <div id="deckPile" class="deck-pile" title="點擊抽牌" style="display: none;">
+                            <span class="deck-count" id="deckCountText">0</span>
+                        </div>
+                        <section id="board" class="board-area"></section>
+                    </div>
 
                     <aside class="players-section" id="playersContainer"></aside>
                 </div>
 
-                <footer class="interaction-footer glass-panel">
+                <footer id="interactionFooter" class="interaction-footer glass-panel" style="display: none;">
                     <div class="hand-section">
                         <div style="display:flex; justify-content:space-between; margin-bottom:5px; font-weight:bold;">
                             <span>私人手牌</span>
@@ -75,7 +81,7 @@
                 </footer>
             </main>
 
-            <div class="action-floating-bar">
+            <div id="actionFloatingBar" class="action-floating-bar" style="display: none;">
                 <button id="autoPlayBtn" style="background:#f59e0b; color:white;">自動出牌</button>
                 <button id="finishBtn" style="background:#22c55e; color:white; padding:10px 30px;">確定出牌</button>
                 <button id="undoBtn" style="background:#ef4444; color:white;">還原回合</button>

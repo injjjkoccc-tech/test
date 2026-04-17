@@ -62,16 +62,16 @@ body {
 .chat-input-row { padding: 10px; display: flex; gap: 5px; background: rgba(0,0,0,0.1); }
 .chat-input-row input { flex: 1; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: white; padding: 5px; border-radius: 4px; }
 
-/* 牌桌區 (核心修復：使用 Grid 區分兩側) */
 .board-area {
     background: rgba(0, 0, 0, 0.2);
     border-radius: 12px;
     padding: 1rem;
     overflow-y: auto;
-    display: flex; /* 改回 flex 展示 */
+    display: flex;
     flex-wrap: wrap;
     align-content: flex-start;
     gap: 15px;
+    flex: 1; /* fills wrapper */
 }
 
 .tile-set {
@@ -87,6 +87,39 @@ body {
     width: fit-content;
 }
 .tile-set.error-set { border-color: var(--danger-color); background: rgba(239, 68, 68, 0.1); }
+
+/* 剩餘牌堆 (右上角懸浮) */
+.deck-pile {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 60px;
+    height: 85px;
+    background: transparent;
+    border: 2px dashed rgba(255,255,255,0.4);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    cursor: pointer;
+    z-index: 10;
+    transition: 0.2s;
+}
+.deck-pile:hover { transform: scale(1.05); border-color: white; }
+.deck-pile::before {
+    content: '';
+    position: absolute;
+    width: 50px;
+    height: 75px;
+    background: repeating-linear-gradient(45deg, #1e293b, #1e293b 5px, rgba(30,41,59,0.5) 5px, rgba(30,41,59,0.5) 10px);
+    border-radius: 4px;
+    box-shadow: var(--tile-shadow);
+    z-index: -1;
+}
+.deck-count { font-weight: bold; font-size: 1.2rem; text-shadow: 1px 1px 2px black; }
+
 
 /* 底部交互 */
 .interaction-footer {
@@ -112,6 +145,7 @@ body {
 .tile.red { color: var(--tile-red); }
 .tile.blue { color: #2563eb; }
 .tile.orange { color: #f59e0b; }
+.tile.black { color: #000000; }
 .tile.joker { color: #9333ea; }
 .joker-img { width: 85%; height: 85%; object-fit: contain; }
 

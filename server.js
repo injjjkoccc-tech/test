@@ -335,7 +335,15 @@ io.on('connection', (socket) => {
         if(errs.length > 0) return socket.emit('error', { message: '牌組規則無效', errorIndices: errs });
 
         if(!player.hasMeld) {
-            if (cleaned.reduce((sum, s) => sum + calculateSetScore(s), 0) < 30) return socket.emit('error', '破冰總分須滿 30');
+            const oldTableIds = new Set(room.board.flat().map(t => t && t.id));
+            let newSetsScore = 0;
+            for (const set of cleaned) {
+                const hasOld = set.some(t => oldTableIds.has(t.id));
+                const hasNew = set.some(t => !oldTableIds.has(t.id));
+                if (hasOld && hasNew) return socket.emit('error', '破冰前不可使用桌面上的牌進行重組');
+                if (hasNew && !hasOld) newSetsScore += calculateSetScore(set);
+            }
+            if (newSetsScore < 30) return socket.emit('error', `破冰總分需達到 30 分 (目前僅出牌 ${newSetsScore} 分)`);
             player.hasMeld = true;
         }
 
@@ -363,21 +371,10 @@ io.on('connection', (socket) => {
     });
 
     function processPlayerWin(room, player) {
-        if (player.isFinished) return;
-        player.isFinished = true;
-        player.rank = room.players.filter(p => p.isFinished).length;
-        io.to(room.id).emit('chat', { sender: '系統公告', message: `🎉 恭喜 ${player.nickname} 獲得第 ${player.rank} 名！` });
-
-        const unfinished = room.players.filter(p => !p.isFinished);
-        if (unfinished.length <= 1) {
-            if (unfinished.length === 1) { unfinished[0].isFinished = true; unfinished[0].rank = room.players.length; }
-            room.gameStarted = false;
-            const winners = room.players.map(p => ({ nickname: p.nickname, rank: p.rank })).sort((a,b) => a.rank - b.rank);
-            io.to(room.id).emit('chat', { sender: '系統公告', message: `🏆 遊戲結束！最終排名已產生。` });
-            io.to(room.id).emit('gameOver', { winner: room.players.find(p => p.rank === 1).nickname, allScores: winners });
-        } else {
-            updateTurnAndNotify(room, `${player.nickname} 完賽`);
-        }
+        room.gameStarted = false;
+        io.to(room.id).emit('chat', { sender: '系統公告', message: `🏆 遊戲結束！恭喜 ${player.nickname} 獲勝！` });
+        const sortedPlayers = [...room.players].sort((a,b) => a.hand.length - b.hand.length);
+        io.to(room.id).emit('gameOver', { winner: player.nickname, allScores: sortedPlayers.map(p => ({ nickname: p.nickname, cardCount: p.hand.length })) });
     }
 
     socket.on('drawTile', () => {
@@ -400,7 +397,8 @@ io.on('connection', (socket) => {
             room.finalRoundTurns++;
             if (room.finalRoundTurns >= room.players.length) {
                 room.gameStarted = false;
-                io.to(room.id).emit('gameOver', { winner: '對局結束', allScores: room.players.map(p => ({ nickname: p.nickname, cardCount: p.hand.length })) });
+                const sortedPlayers = [...room.players].sort((a,b) => a.hand.length - b.hand.length);
+                io.to(room.id).emit('gameOver', { winner: sortedPlayers[0].nickname, allScores: sortedPlayers.map(p => ({ nickname: p.nickname, cardCount: p.hand.length })) });
                 return;
             }
         }
