@@ -224,7 +224,7 @@ io.on('connection', (socket) => {
         const player = room.players.find(pl => pl.socketId === socket.id);
         const chatMsg = {
             nickname: p.nickname, message, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            icon: player.isHost ? '👑' : '🐱'
+            icon: player.isHost ? '👑' : '🌸'
         };
         room.chatHistory.push(chatMsg);
         io.to(p.roomId).emit('chat', { sender: chatMsg.nickname, message: chatMsg.message, icon: chatMsg.icon, time: chatMsg.time });
@@ -536,19 +536,6 @@ io.on('connection', (socket) => {
     socket.on('leave', () => handleDisconnect(socket));
     socket.on('disconnect', () => handleDisconnect(socket));
 
-    socket.on('chat', (message) => {
-        const player = players.get(socket.id);
-        if (!player) return;
-        const room = rooms.get(player.roomId);
-        if (room) {
-            const pl = room.players.find(p => p.socketId === socket.id);
-            if (pl) {
-                const icon = pl.isHost ? '👑' : '🌸';
-                io.to(room.id).emit('chat', { nickname: pl.nickname, message, icon });
-            }
-        }
-    });
-
     function handleDisconnect(s) {
         const p = players.get(s.id);
         if (!p) return;
@@ -560,11 +547,24 @@ io.on('connection', (socket) => {
                 
                 const hasHumanOnline = room.players.some(x => x.online && !x.isBot && x.socketId !== s.id);
                 if (!hasHumanOnline) {
+                    if (room.countdownInterval) { clearInterval(room.countdownInterval); room.countdownInterval = null; }
                     rooms.delete(p.roomId);
                 } else if (!room.gameStarted) { 
+                    if (room.countdownInterval) {
+                        clearInterval(room.countdownInterval);
+                        room.countdownInterval = null;
+                        io.to(room.id).emit('chat', { sender: '系統公告', message: '⚠️ 房主退出，倒數暫停等待新玩家就緒！', icon: '📢' });
+                    }
                     room.players = room.players.filter(x => x.socketId !== s.id); 
                     if (room.players.length === 0) rooms.delete(p.roomId); 
-                    else if (pl.isHost) room.players[0].isHost = true; 
+                    else {
+                        if (pl.isHost) room.players[0].isHost = true;
+                        io.to(room.id).emit('roomUpdate', {
+                            roomCode: room.id, maxPlayers: room.maxPlayers, players: room.players.map(x => ({
+                                nickname: x.nickname, isHost: x.isHost, cardCount: x.hand ? x.hand.length : 0, online: x.online, isBot: x.isBot
+                            })), gameStarted: room.gameStarted
+                        });
+                    }
                 }
                 else {
                     io.to(room.id).emit('roomUpdate', {
