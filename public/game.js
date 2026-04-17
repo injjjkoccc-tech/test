@@ -112,6 +112,7 @@ socket.on('countdownUpdate', (data) => {
 });
 
 socket.on('gameStart', (data) => {
+    document.getElementById('modal-gameover').style.display = 'none';
     if (data.players) state.players = data.players;
     state.hand = data.hand;
     state.board = data.board || [];
@@ -221,7 +222,7 @@ function handleDrop(e, targetIdx, targetType) {
             // 自動分裂
             if (tI > 0 && tI < state.board[sI].length) {
                 const right = state.board[sI].splice(tI);
-                state.board.push(right);
+                state.board.splice(sI + 1, 0, right);
             }
             if (state.board[sI].length === 0) state.board.splice(sI, 1);
         }
@@ -320,11 +321,22 @@ socket.on('error', data => {
     if (data.errorIndices) renderBoard(data.errorIndices);
 });
 socket.on('tileDrawn', data => { 
-    state.hand = data.hand; 
+    if (data.drawnTile) state.hand.push(data.drawnTile);
+    else if (data.hand) state.hand = data.hand;
     document.getElementById('deckCountText').textContent = data.deckCount || 0;
     renderHand(); 
 });
 socket.on('gameOver', data => {
     document.getElementById('winStatus').textContent = `優勝者：${data.winner}`;
+    
+    const me = state.players.find(p => p.nickname === state.nickname);
+    const playAgainBtn = document.getElementById('playAgainBtn');
+    if (me && me.isHost) {
+        playAgainBtn.style.display = 'inline-block';
+        playAgainBtn.onclick = () => socket.emit('restartGame');
+    } else {
+        playAgainBtn.style.display = 'none';
+    }
+    
     document.getElementById('modal-gameover').style.display = 'block';
 });

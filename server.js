@@ -268,7 +268,7 @@ io.on('connection', (socket) => {
                 });
             }
         });
-        io.to(room.id).emit('chat', { sender: '系統公告', message: '🎲 遊戲開始！', icon: '📢' });
+        io.to(room.id).emit('chat', { sender: '系統公告', message: '📢 🎲 遊戲開始！', icon: '📢' });
         checkAndHandleBotTurn(room);
     }
 
@@ -340,8 +340,9 @@ io.on('connection', (socket) => {
             if (player.hand.length === 0) processPlayerWin(room, player);
             else checkGameFinalEnd(room, `${player.nickname} 完成出牌`);
         } else if (room.deck.length > 0) {
-            player.hand.push(room.deck.shift());
-            if (player.socketId) io.to(player.socketId).emit('tileDrawn', { hand: player.hand, deckCount: room.deck.length });
+            const tile = room.deck.shift();
+            player.hand.push(tile);
+            if (player.socketId) io.to(player.socketId).emit('tileDrawn', { drawnTile: tile, deckCount: room.deck.length });
             checkGameFinalEnd(room, `${player.nickname} 抽牌`);
         } else {
             checkGameFinalEnd(room, `${player.nickname} 略過`);
@@ -422,7 +423,7 @@ io.on('connection', (socket) => {
             if (room.deck.length > 0) {
                 const tile = room.deck.shift();
                 player.hand.push(tile);
-                socket.emit('tileDrawn', { hand: player.hand, deckCount: room.deck.length });
+                socket.emit('tileDrawn', { drawnTile: tile, deckCount: room.deck.length });
                 updateTurnAndNotify(room, `${player.nickname} 未出牌，系統自動補牌`);
             } else {
                 updateTurnAndNotify(room, `${player.nickname} 略過回合 (牌堆空)`);
@@ -440,14 +441,14 @@ io.on('connection', (socket) => {
         if (player.isFinished) return;
         player.isFinished = true;
         player.rank = room.players.filter(p => p.isFinished).length;
-        io.to(room.id).emit('chat', { sender: '系統公告', message: `🎉 恭喜 ${player.nickname} 獲得第 ${player.rank} 名！`, icon: '📢' });
+        io.to(room.id).emit('chat', { sender: '系統公告', message: `📢 🎉 恭喜 ${player.nickname} 榮獲 第 ${player.rank} 名！`, icon: '📢' });
 
         const unfinished = room.players.filter(p => !p.isFinished);
         if (unfinished.length <= 1) {
             if (unfinished.length === 1) { unfinished[0].isFinished = true; unfinished[0].rank = room.players.length; }
             room.gameStarted = false;
             const winners = room.players.map(p => ({ nickname: p.nickname, rank: p.rank })).sort((a,b) => a.rank - b.rank);
-            io.to(room.id).emit('chat', { sender: '系統公告', message: `🏆 遊戲結束！最終排名已產生。`, icon: '📢' });
+            io.to(room.id).emit('chat', { sender: '系統公告', message: `📢 🏆 遊戲結束！最終排名已產生。`, icon: '📢' });
             io.to(room.id).emit('gameOver', { winner: room.players.find(p => p.rank === 1).nickname, allScores: winners });
         } else {
             updateTurnAndNotify(room, `${player.nickname} 完賽`);
@@ -468,13 +469,14 @@ io.on('connection', (socket) => {
     function checkGameFinalEnd(room, msg) {
         if (room.deck.length === 0 && !room.isFinalRound) {
             room.isFinalRound = true; room.finalRoundTurns = 0;
-            io.to(room.id).emit('chat', { sender: '系統公告', message: '⚠️ 牌堆已空，對局進入最後一輪！' });
+            io.to(room.id).emit('chat', { sender: '系統公告', message: '📢 ⚠️ 牌堆已空，對局進入最後一輪！', icon: '📢' });
         }
         if (room.isFinalRound) {
             room.finalRoundTurns++;
             if (room.finalRoundTurns >= room.players.length) {
                 room.gameStarted = false;
                 const sortedPlayers = [...room.players].sort((a,b) => a.hand.length - b.hand.length);
+                io.to(room.id).emit('chat', { sender: '系統公告', message: `📢 ⚠️ 遊戲結束 (宣告流局)！`, icon: '📢' });
                 io.to(room.id).emit('gameOver', { winner: sortedPlayers[0].nickname, allScores: sortedPlayers.map(p => ({ nickname: p.nickname, cardCount: p.hand.length })) });
                 return;
             }
