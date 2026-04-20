@@ -97,9 +97,9 @@ socket.on('roomStatusInvalid', () => {
 socket.on('roomUpdate', (data) => {
     state.players = data.players || [];
     state.gameStarted = data.gameStarted;
-    state.maxPlayers = data.maxPlayers || 4;
+    if(data.maxPlayers) state.maxPlayers = data.maxPlayers;
     
-    const me = state.players.find(p => p.nickname === state.nickname);
+    const me = state.players.find(p => p.playerId === state.playerId);
     if (!state.gameStarted && me) {
         readyBtn.style.display = 'inline-block';
         if (me.isHost) {
@@ -163,9 +163,13 @@ socket.on('gameStart', (data) => {
     state.hand = data.hand;
     state.board = data.board || [];
     state.gameStarted = true;
+    if(data.maxPlayers) state.maxPlayers = data.maxPlayers;
     state.turnPlayer = data.turnPlayer;
-    state.myTurn = (state.nickname === state.turnPlayer);
+    state.turnPlayerId = data.turnPlayerId;
+    state.myTurn = (state.playerId === state.turnPlayerId);
     state.history = [JSON.parse(JSON.stringify({ hand: state.hand, board: state.board, tempTiles: [] }))];
+    
+    playScreenEffect('GAME START!', '#38bdf8');
     document.getElementById('deckCountText').textContent = data.deckCount || 0;
     
     document.getElementById('deckPile').style.display = 'flex';
@@ -180,7 +184,8 @@ socket.on('turnUpdate', (data) => {
     if (data.players) state.players = data.players;
     state.board = data.board;
     state.turnPlayer = data.turnPlayer;
-    state.myTurn = (state.nickname === state.turnPlayer);
+    state.turnPlayerId = data.turnPlayerId;
+    state.myTurn = (state.playerId === state.turnPlayerId);
     if (state.myTurn) {
         state.history = [JSON.parse(JSON.stringify({ hand: state.hand, board: state.board, tempTiles: [] }))];
     }
@@ -257,6 +262,7 @@ function handleDrop(e, targetIdx, targetType) {
     const src = e.dataTransfer.getData('source');
     
     let tile = null;
+    let adjust = 0;
     if (src === 'hand') {
         const i = state.hand.findIndex(t => t.id === id);
         if (i > -1) tile = state.hand.splice(i, 1)[0];
@@ -269,8 +275,13 @@ function handleDrop(e, targetIdx, targetType) {
             if (tI > 0 && tI < state.board[sI].length) {
                 const right = state.board[sI].splice(tI);
                 state.board.splice(sI + 1, 0, right);
+                if (targetType === 'board' && targetIdx > sI) adjust += 1;
             }
-            if (state.board[sI].length === 0) state.board.splice(sI, 1);
+            if (state.board[sI].length === 0) {
+                state.board.splice(sI, 1);
+                if (targetType === 'board' && targetIdx > sI) adjust -= 1;
+                if (targetType === 'board' && targetIdx === sI) targetIdx = -1;
+            }
         }
     } else if (src === 'temp') {
         const i = state.tempTiles.findIndex(t => t.id === id);
@@ -280,8 +291,9 @@ function handleDrop(e, targetIdx, targetType) {
     if (!tile) return;
 
     if (targetType === 'board') {
-        if (targetIdx === -1) state.board.push([tile]);
-        else state.board[targetIdx].push(tile);
+        const finalIdx = targetIdx + adjust;
+        if (finalIdx === -1 || finalIdx < 0 || finalIdx >= state.board.length) state.board.push([tile]);
+        else state.board[finalIdx].push(tile);
     } else if (targetType === 'workspace') {
         state.tempTiles.push(tile);
     } else if (targetType === 'handTarget') {
@@ -343,7 +355,7 @@ function renderPlayers() {
         const p = state.players[i];
         if (p) {
             const div = document.createElement('div');
-            div.className = `player-card ${p.nickname === state.turnPlayer ? 'active' : ''} ${p.isFinished ? 'finished' : ''}`;
+            div.className = `player-card ${p.playerId === state.turnPlayerId ? 'active' : ''} ${p.isFinished ? 'finished' : ''}`;
             let icon = p.isBot ? '🤖' : (p.isHost ? '👑' : '🌸');
             if (!p.online) icon = '🔌';
             div.innerHTML = `<span>${icon}</span><div style="flex:1"><b>${p.nickname}</b></div><span>${p.isFinished? '🏆 NO.'+p.rank : '🎴 '+p.cardCount}</span>`;
@@ -387,7 +399,9 @@ socket.on('gameOver', data => {
     state.gameStarted = false;
     document.getElementById('winStatus').textContent = `優勝者：${data.winner}`;
     
-    const me = state.players.find(p => p.nickname === state.nickname);
+    playScreenEffect('GAME OVER!', '#ef4444');
+    
+    const me = state.players.find(p => p.playerId === state.playerId);
     
     ['autoPlayBtn', 'finishBtn', 'undoBtn', 'sortByColor', 'sortByNum'].forEach(id => {
         const btn = document.getElementById(id);
@@ -416,3 +430,15 @@ socket.on('gameOver', data => {
 
     document.getElementById('modal-gameover').style.display = 'block';
 });
+
+function playScreenEffect(text, color) {
+    const el = document.getElementById('screenEffect');
+    if (!el) return;
+    el.textContent = text;
+    el.style.color = color || 'white';
+    el.style.textShadow = `0 0 30px ${color || '#38bdf8'}`;
+    el.style.display = 'flex';
+    el.style.animation = 'none';
+    setTimeout(() => { el.style.animation = 'scaleFade 2.5s cubic-bezier(0.17, 0.89, 0.32, 1.25) forwards'; }, 10);
+    setTimeout(() => { el.style.display = 'none'; }, 2500);
+}

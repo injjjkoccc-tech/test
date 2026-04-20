@@ -201,18 +201,18 @@ io.on('connection', (socket) => {
 
         players.set(socket.id, { nickname, roomId: roomCode, playerId: finalPlayerId });
         io.to(roomCode).emit('roomUpdate', {
-            roomCode, players: room.players.map(p => ({
-                nickname: p.nickname, isHost: p.isHost, cardCount: p.hand ? p.hand.length : 0, online: p.online, isBot: p.isBot
+            roomCode, maxPlayers: room.maxPlayers, players: room.players.map(p => ({
+                nickname: p.nickname, isHost: p.isHost, cardCount: p.hand ? p.hand.length : 0, online: p.online, isBot: p.isBot, playerId: p.playerId
             })),
-            gameStarted: room.gameStarted, myId: finalPlayerId
+            gameStarted: room.gameStarted
         });
         socket.emit('joined', { roomCode, playerId: finalPlayerId, chatHistory: room.chatHistory });
         
         if (existingPlayer && room.gameStarted) {
             socket.emit('gameStart', {
-                hand: existingPlayer.hand, board: room.board,
-                players: room.players.map(pl => ({ nickname: pl.nickname, cardCount: pl.hand.length, isBot: pl.isBot, online: pl.online, isFinished: pl.isFinished, rank: pl.rank, isHost: pl.isHost })),
-                turnPlayer: room.players[room.turn].nickname, deckCount: room.deck.length
+                hand: existingPlayer.hand, board: room.board, maxPlayers: room.maxPlayers,
+                players: room.players.map(pl => ({ nickname: pl.nickname, cardCount: pl.hand.length, isBot: pl.isBot, online: pl.online, isFinished: pl.isFinished, rank: pl.rank, isHost: pl.isHost, playerId: pl.playerId })),
+                turnPlayer: room.players[room.turn].nickname, turnPlayerId: room.players[room.turn].playerId, deckCount: room.deck.length
             });
         }
     });
@@ -277,8 +277,8 @@ io.on('connection', (socket) => {
         startNewGame(room);
         // Important: Update players list one more time to broadcast the bots explicitly!
         io.to(room.id).emit('roomUpdate', {
-            roomCode: room.id, players: room.players.map(pl => ({
-                nickname: pl.nickname, isHost: pl.isHost, cardCount: pl.hand ? pl.hand.length : 0, online: pl.online, isBot: pl.isBot
+            roomCode: room.id, maxPlayers: room.maxPlayers, players: room.players.map(pl => ({
+                nickname: pl.nickname, isHost: pl.isHost, cardCount: pl.hand ? pl.hand.length : 0, online: pl.online, isBot: pl.isBot, playerId: pl.playerId
             })),
             gameStarted: room.gameStarted
         });
@@ -303,9 +303,9 @@ io.on('connection', (socket) => {
         room.players.forEach(p => {
             if (p.socketId) {
                 io.to(p.socketId).emit('gameStart', {
-                    hand: p.hand, 
-                    players: room.players.map(pl => ({ nickname: pl.nickname, cardCount: pl.hand.length, isBot: pl.isBot, online: pl.online, isFinished: pl.isFinished, rank: pl.rank, isHost: pl.isHost })),
-                    turnPlayer: room.players[room.turn].nickname, deckCount: room.deck.length
+                    hand: p.hand, board: room.board, maxPlayers: room.maxPlayers,
+                    players: room.players.map(pl => ({ nickname: pl.nickname, cardCount: pl.hand.length, isBot: pl.isBot, online: pl.online, isFinished: pl.isFinished, rank: pl.rank, isHost: pl.isHost, playerId: pl.playerId })),
+                    turnPlayer: room.players[room.turn].nickname, turnPlayerId: room.players[room.turn].playerId, deckCount: room.deck.length
                 });
             }
         });
@@ -337,8 +337,8 @@ io.on('connection', (socket) => {
         room.board.forEach(s => checkSetValidity(s));
 
         io.to(room.id).emit('turnUpdate', {
-            turnPlayer: room.players[room.turn].nickname, board: room.board, deckCount: room.deck.length,
-            players: room.players.map(p => ({ nickname: p.nickname, cardCount: p.hand.length, isBot: p.isBot, online: p.online, isFinished: p.isFinished, rank: p.rank, isHost: p.isHost }))
+            turnPlayer: room.players[room.turn].nickname, turnPlayerId: room.players[room.turn].playerId, board: room.board, deckCount: room.deck.length,
+            players: room.players.map(p => ({ nickname: p.nickname, cardCount: p.hand.length, isBot: p.isBot, online: p.online, isFinished: p.isFinished, rank: p.rank, isHost: p.isHost, playerId: p.playerId }))
         });
         checkAndHandleBotTurn(room);
     }
@@ -530,7 +530,10 @@ io.on('connection', (socket) => {
     socket.on('restartGame', () => {
         const p = players.get(socket.id);
         const room = rooms.get(p.roomId);
-        if(room.players.find(pl => pl.socketId === socket.id).isHost) startNewGame(room);
+        if(room.players.find(pl => pl.socketId === socket.id).isHost) {
+            room.players = room.players.filter(pl => pl.online || pl.isBot);
+            fillBotsAndStart(room);
+        }
     });
 
     socket.on('leave', () => handleDisconnect(socket));
@@ -561,7 +564,7 @@ io.on('connection', (socket) => {
                         if (pl.isHost) room.players[0].isHost = true;
                         io.to(room.id).emit('roomUpdate', {
                             roomCode: room.id, maxPlayers: room.maxPlayers, players: room.players.map(x => ({
-                                nickname: x.nickname, isHost: x.isHost, cardCount: x.hand ? x.hand.length : 0, online: x.online, isBot: x.isBot
+                                nickname: x.nickname, isHost: x.isHost, cardCount: x.hand ? x.hand.length : 0, online: x.online, isBot: x.isBot, playerId: x.playerId
                             })), gameStarted: room.gameStarted
                         });
                     }
@@ -569,7 +572,7 @@ io.on('connection', (socket) => {
                 else {
                     io.to(room.id).emit('roomUpdate', {
                         roomCode: room.id, maxPlayers: room.maxPlayers, players: room.players.map(x => ({
-                            nickname: x.nickname, isHost: x.isHost, cardCount: x.hand ? x.hand.length : 0, online: x.online, isBot: x.isBot
+                            nickname: x.nickname, isHost: x.isHost, cardCount: x.hand ? x.hand.length : 0, online: x.online, isBot: x.isBot, playerId: x.playerId
                         })), gameStarted: room.gameStarted
                     });
                 }
