@@ -179,3 +179,19 @@ button { padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: point
     85% { transform: scale(1); opacity: 1; }
     100% { transform: scale(1.5); opacity: 0; }
 }
+
+/* Modal Popup 樣式 */
+.modal {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(0, 0, 0, 0.85); z-index: 5000;
+    justify-content: center; align-items: center;
+}
+
+.modal-content {
+    background: #1e293b; backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 16px;
+    padding: 2rem; max-width: 520px; width: 92%; text-align: center;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6); max-height: 85vh; overflow-y: auto;
+}
+/* 修正：modal 預設隱藏 */
+#modal-gameover, #rulesModal { display: none; }

@@ -68,6 +68,13 @@ socket.on('joined', (data) => {
     document.getElementById('roomDisplay').textContent = data.roomCode;
 });
 
+// 規則按鈕綁定（入口與房間內共用同一個 Modal）
+const rulesModal = document.getElementById('rulesModal');
+document.getElementById('lobbyRulesBtn').onclick = () => { rulesModal.style.display = 'flex'; };
+document.getElementById('gameRulesBtn').onclick = () => { rulesModal.style.display = 'flex'; };
+// 點擊遮罩背景也可關閉
+rulesModal.addEventListener('click', (e) => { if (e.target === rulesModal) rulesModal.style.display = 'none'; });
+
 // INITIALIZE LOBBY
 const savedName = localStorage.getItem('rummikub_nickname');
 if (savedName) document.getElementById('nickname').value = savedName;
@@ -400,29 +407,34 @@ socket.on('tileDrawn', data => {
 });
 socket.on('gameOver', data => {
     state.gameStarted = false;
-    document.getElementById('winStatus').textContent = `優勝者：${data.winner}`;
-    
+
     playScreenEffect('GAME OVER!', '#ef4444');
-    
-    const me = state.players.find(p => p.playerId === state.playerId);
-    
+
+    // 聊天室印出最終排名
+    const rankMsg = (data.allScores || []).map(p => {
+        const medal = ['🥇','🥈','🥉'][p.rank - 1] || `第${p.rank}名`;
+        const cards = p.cardCount > 0 ? ` (剩 ${p.cardCount} 張)` : ' ✓';
+        return `${medal} ${p.nickname}${cards}`;
+    }).join('　');
+    appendChat({ sender: '最終排名', message: rankMsg || `🏆 ${data.winner}`, icon: '🏆' });
+    if (data.isDraw) appendChat({ sender: '系統公告', message: '⚠️ 本局為流局，按剩餘手牌數決定名次', icon: '📢' });
+
+    // 停用操作按鈕
     ['autoPlayBtn', 'finishBtn', 'undoBtn', 'sortByColor', 'sortByNum'].forEach(id => {
         const btn = document.getElementById(id);
-        if(btn) { btn.disabled = true; btn.style.background = '#94a3b8'; btn.style.cursor = 'not-allowed'; }
+        if (btn) { btn.disabled = true; btn.style.background = '#94a3b8'; btn.style.cursor = 'not-allowed'; }
     });
-    
+
+    // 顯示「再來一局」或「遊戲結束」
     const rb = document.getElementById('readyBtn');
     rb.style.display = 'inline-block';
-    
+    const me = state.players.find(p => p.playerId === state.playerId);
     if (me && me.isHost) {
         rb.textContent = '再來一局';
         rb.disabled = false;
         rb.style.background = '#22c55e';
         rb.style.cursor = 'pointer';
-        rb.onclick = () => {
-            document.getElementById('modal-gameover').style.display = 'none';
-            socket.emit('restartGame');
-        };
+        rb.onclick = () => socket.emit('restartGame');
     } else {
         rb.textContent = '遊戲結束';
         rb.disabled = true;
@@ -430,9 +442,8 @@ socket.on('gameOver', data => {
         rb.style.cursor = 'not-allowed';
         rb.onclick = null;
     }
-
-    document.getElementById('modal-gameover').style.display = 'block';
 });
+
 
 function playScreenEffect(text, color) {
     const el = document.getElementById('screenEffect');
