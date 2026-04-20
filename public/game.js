@@ -358,7 +358,10 @@ function renderPlayers() {
             div.className = `player-card ${p.playerId === state.turnPlayerId ? 'active' : ''} ${p.isFinished ? 'finished' : ''}`;
             let icon = p.isBot ? '🤖' : (p.isHost ? '👑' : '🌸');
             if (!p.online) icon = '🔌';
-            div.innerHTML = `<span>${icon}</span><div style="flex:1"><b>${p.nickname}</b></div><span>${p.isFinished? '🏆 NO.'+p.rank : '🎴 '+p.cardCount}</span>`;
+            const isMe = (p.playerId === state.playerId);
+            const nameColor = isMe ? '#38bdf8' : 'white';
+            const nameText = isMe ? `${p.nickname} (你)` : p.nickname;
+            div.innerHTML = `<span>${icon}</span><div style="flex:1"><b style="color:${nameColor}">${nameText}</b></div><span>${p.isFinished? '🏆 NO.'+p.rank : '🎴 '+p.cardCount}</span>`;
             playersContainer.appendChild(div);
         } else {
             const div = document.createElement('div');
