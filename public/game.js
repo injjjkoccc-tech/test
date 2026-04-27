@@ -108,8 +108,8 @@ socket.on('roomUpdate', (data) => {
     
     const me = state.players.find(p => p.playerId === state.playerId);
     if (!state.gameStarted && me) {
-        readyBtn.style.display = 'inline-block';
         if (me.isHost) {
+            readyBtn.style.display = 'inline-block';
             const others = state.players.filter(p => !p.isHost);
             if (others.length === 0) {
                 readyBtn.textContent = '直接開始';
@@ -121,9 +121,7 @@ socket.on('roomUpdate', (data) => {
                 readyBtn.disabled = false;
             }
         } else {
-            readyBtn.textContent = '等待房主開始...';
-            readyBtn.style.background = '#94a3b8';
-            readyBtn.disabled = true;
+            readyBtn.style.display = 'none';
         }
     } else if (state.gameStarted) {
         readyBtn.style.display = 'none';
@@ -344,7 +342,16 @@ sortByNumBtn.onclick = () => {
     renderHand();
 };
 
-autoPlayBtn.onclick = () => socket.emit('autoPlayRequest');
+autoPlayBtn.onclick = () => {
+    if (state.myTurn && state.history.length > 0) {
+        const snap = state.history[0];
+        state.hand = JSON.parse(JSON.stringify(snap.hand));
+        state.board = JSON.parse(JSON.stringify(snap.board));
+        state.tempTiles = [];
+        renderAll();
+    }
+    socket.emit('autoPlayRequest');
+};
 
 const deckPile = document.getElementById('deckPile');
 deckPile.onclick = () => {

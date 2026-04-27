@@ -89,26 +89,27 @@ function checkSetValidity(set) {
         const missing = totalSpan - sortedReal.length;
         if (missing > jokers.length) return { valid: false, reason: '鬼牌不足以填補空位' };
         
-        // 賦予 tempNumber（確保鬼牌能插入正確位置）
-        const usedNumbers = sortedReal.map(t => t.number);
-        let pointer = minNum;
+        // 推算最左邊的起點 S
+        let S = Math.min(minNum, 14 - set.length);
+        if (S < 1 || S > minNum || S + set.length - 1 < maxNum) {
+            return { valid: false, reason: '順組數字超出 1-13 範圍' };
+        }
         
-        // 重新遍歷分配
+        // 重新分配 tempNumber 並排序
+        const usedNumbers = new Set(sortedReal.map(t => t.number));
+        let currentS = S;
         set.forEach(t => {
             if (t.color !== 'joker') t.tempNumber = t.number;
         });
-        
-        const usedSet = new Set(usedNumbers);
-        // 按順序填充鬼牌位置
         set.forEach(t => {
             if (t.color === 'joker') {
-                while(usedSet.has(pointer)) pointer++;
-                t.tempNumber = pointer;
-                usedSet.add(pointer);
+                while(usedNumbers.has(currentS)) currentS++;
+                t.tempNumber = currentS;
+                usedNumbers.add(currentS);
             }
         });
-        // 強制根據 tempNumber 排序以保證回傳給前端的順序是正確的
-        set.sort((a,b) => (a.tempNumber || 0) - (b.tempNumber || 0));
+        
+        set.sort((a,b) => a.tempNumber - b.tempNumber);
         return { valid: true };
     }
 
@@ -568,7 +569,7 @@ io.on('connection', (socket) => {
                 
                 const hasHumanOnline = room.players.some(x => x.online && !x.isBot && x.socketId !== s.id);
                 
-                if (isExplicit || !room.gameStarted) {
+                if (!room.gameStarted) {
                     if (room.countdownInterval) {
                         clearInterval(room.countdownInterval);
                         room.countdownInterval = null;
@@ -596,6 +597,9 @@ io.on('connection', (socket) => {
                             nickname: x.nickname, isHost: x.isHost, cardCount: x.hand ? x.hand.length : 0, online: x.online, isBot: x.isBot, playerId: x.playerId
                         })), gameStarted: room.gameStarted
                     });
+                    if (room.turn === room.players.indexOf(pl)) {
+                        checkAndHandleBotTurn(room);
+                    }
                 }
             }
         }

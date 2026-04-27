@@ -123,7 +123,7 @@ body {
 
 /* åº•éƒ¨äº¤äº’ */
 .interaction-footer {
-    height: 220px;
+    height: 160px;
     background: rgba(15, 23, 42, 0.9);
     border-top: 2px solid var(--accent-color);
     display: flex;
@@ -180,7 +180,7 @@ button { padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: point
     100% { transform: scale(1.5); opacity: 0; }
 }
 
-/* Modal Popup ¼Ë¦¡ */
+/* Modal Popup ï¿½Ë¦ï¿½ */
 .modal {
     position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
     background: rgba(0, 0, 0, 0.85); z-index: 5000;
@@ -193,10 +193,13 @@ button { padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: point
     padding: 2rem; max-width: 520px; width: 92%; text-align: center;
     box-shadow: 0 8px 32px rgba(0,0,0,0.6); max-height: 85vh; overflow-y: auto;
 }
-/* ­×¥¿¡Gmodal ¹w³]ÁôÂÃ */
+/* ï¿½×¥ï¿½ï¿½Gmodal ï¿½wï¿½]ï¿½ï¿½ï¿½ï¿½ */
 #modal-gameover, #rulesModal { display: none; }
 
 .chat-area { min-height: 0; overflow: hidden; }
 .deck-card { transition: transform 0.2s, box-shadow 0.2s; cursor: pointer; }
 .deck-card:hover { transform: translateY(-8px); box-shadow: -2px 10px 10px rgba(0,0,0,0.5) !important; }
 
+
+.hand-section:first-child { flex: 2 !important; }
+.hand-section:last-child { flex: 1 !important; }
