@@ -41,7 +41,7 @@
                     <button id="joinBtn" style="background:#334155; color:white;">加入</button>
                 </div>
                 <div style="margin-top:10px;">
-                    <button style="width:100%; height:40px; background:#10b981; color:white; border-radius:4px; font-weight:bold; cursor:pointer;" onclick="document.getElementById('rulesModal').style.display='flex'">📝 拉密教學與規則說明</button>
+                    <button id="lobbyRulesBtn" style="width:100%; height:40px; background:#10b981; color:white; border-radius:4px; font-weight:bold; cursor:pointer; border:none;">📝 拉密教學與規則說明</button>
                 </div>
             </div>
         </div>
@@ -50,7 +50,7 @@
             <header class="game-header">
                 <div class="glass-panel" style="padding:5px 15px; border-radius:20px;">房間: <span id="roomDisplay">----</span></div>
                 <div style="display:flex; gap:10px;">
-                    <button style="background:#10b981; color:white;" onclick="document.getElementById('rulesModal').style.display='flex'">📝 規則</button>
+                    <button id="gameRulesBtn" style="background:#10b981; color:white; border:none;">📝 規則</button>
                     <button id="readyBtn" style="background:#22c55e; color:white;">準備</button>
                     <button onclick="location.reload()" style="background:#ef4444; color:white;">退出</button>
                 </div>
@@ -74,14 +74,14 @@
                         <div id="playersContainer" style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:8px;"></div>
                         <div class="deck-area glass-panel" style="padding:15px; text-align:center; min-height:140px; flex-shrink:0;">
                             <h4 style="margin-bottom:10px; color:#38bdf8;">公牌：<span id="deckCountText">0</span></h4>
-                            <div id="deckPile" title="點擊抽牌" style="display: none; justify-content:center; gap:-10px; margin-bottom:5px; cursor:pointer; transition:0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseleave="this.style.transform='scale(1)'">
-                                <div class="deck-card" style="width:35px; height:50px; background:white; border:1px solid #ccc; border-radius:4px; box-shadow:-2px 2px 5px rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; overflow:hidden; z-index:1; transform: translateX(15px);">
+                            <div id="deckPile" title="點擊抽牌" style="display: none; justify-content:center; gap: 10px; margin-bottom:5px;">
+                                <div class="deck-card" style="width:35px; height:50px; background:white; border:1px solid #ccc; border-radius:4px; box-shadow:-2px 2px 5px rgba(0,0,0,0.4); overflow:hidden; z-index:1; position:relative;">
                                     <img src="cat_card_back.png" style="width:100%; height:100%; object-fit:cover;">
                                 </div>
-                                <div class="deck-card" style="width:35px; height:50px; background:white; border:1px solid #ccc; border-radius:4px; box-shadow:-2px 2px 5px rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; overflow:hidden; z-index:2; transform: translateX(5px);">
+                                <div class="deck-card" style="width:35px; height:50px; background:white; border:1px solid #ccc; border-radius:4px; box-shadow:-2px 2px 5px rgba(0,0,0,0.4); overflow:hidden; z-index:2; position:relative;">
                                     <img src="cat_card_back.png" style="width:100%; height:100%; object-fit:cover;">
                                 </div>
-                                <div class="deck-card" style="width:35px; height:50px; background:white; border:1px solid #ccc; border-radius:4px; box-shadow:-2px 2px 5px rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; overflow:hidden; z-index:3;">
+                                <div class="deck-card" style="width:35px; height:50px; background:white; border:1px solid #ccc; border-radius:4px; box-shadow:-2px 2px 5px rgba(0,0,0,0.4); overflow:hidden; z-index:3; position:relative;">
                                     <img src="cat_card_back.png" style="width:100%; height:100%; object-fit:cover;">
                                 </div>
                             </div>
@@ -115,37 +115,44 @@
 
             <div id="gameAnnounce" class="announce-banner">GAME START</div>
         </div>
+    </div>
 
-        <div id="modal-gameover" class="modal">
-            <div class="modal-content glass-panel">
-                <h1 id="winStatus">優勝者</h1>
-                <div style="margin-top:20px; display:flex; gap:10px; justify-content:center;">
-                    <button id="playAgainBtn" style="background:#22c55e; color:white; padding:10px 30px; display:none;">再來一局</button>
-                    <button onclick="location.reload()" style="background:#38bdf8; color:#0f172a; padding:10px 30px;">回到大廳</button>
-                </div>
+    <!-- 規則說明 Modal -->
+    <div id="rulesModal" class="modal">
+        <div class="modal-content" style="max-height:85vh; overflow-y:auto; text-align:left;">
+            <h2 style="color:#38bdf8; text-align:center; margin-bottom:15px;">🐱 拉密遊戲規則</h2>
+            <div style="color:white; line-height:1.9; font-size:15px;">
+                <p><b>🎯 基本目標</b><br>
+                將手上所有的牌出完，最先出完者獲勝！</p>
+
+                <p style="margin-top:12px;"><b>🧊 破冰（首次出牌）</b><br>
+                第一次出牌時，牌面總數值 <b style="color:#f59e0b;">必須 ≥ 30</b>，才能開始出牌。</p>
+
+                <p style="margin-top:12px;"><b>✅ 合法牌組（至少 3 張）：</b></p>
+                <p style="margin-top:6px;"><b style="color:#38bdf8;">① 連號 (Run)</b> — 同顏色、數字連續<br>
+                範例：<span style="color:#ef4444;font-size:1.3em;font-weight:bold;">3</span>
+                <span style="color:#ef4444;font-size:1.3em;font-weight:bold;">4</span>
+                <span style="color:#ef4444;font-size:1.3em;font-weight:bold;">5</span>
+                <span style="color:#ef4444;font-size:1.3em;font-weight:bold;">6</span>
+                <span style="color:#ef4444;font-size:1.3em;font-weight:bold;">7</span>（全紅）</p>
             </div>
-        <div id="rulesModal" class="modal" style="display:none; align-items:center;">
-        <div class="modal-content" style="max-height:80vh; overflow-y:auto; text-align:left; background: #1e293b; padding:30px; border-radius:12px; margin:auto; width:90%; max-width:550px;">
-            <h2 style="color:#38bdf8; text-align:center; margin-bottom:15px;">拉密遊戲規則 (Rummikub)</h2>
-            <p style="color:white; line-height:1.6; font-size:15px;">
-                <b>🎯 基本規則：</b><br>
-                遊戲目標是將手上的牌全數出完，搶先獲得第一名！<br>
-                每次出牌必須組合出至少 3 張牌的合法牌組。<br>
-                「破冰（首次出牌）」的牌面總數值必須大於等於 30。<br><br>
-                
-                <b>✅ 合法牌組範例 (至少3張)：</b><br>
-                1. <b>連號 (Run)</b>：同顏色且數字連續。<br>
-                舉例：<span style="color:#ef4444; font-weight:bold;">1</span>-<span style="color:#ef4444; font-weight:bold;">2</span>-<span style="color:#ef4444; font-weight:bold;">3</span>-<span style="color:#ef4444; font-weight:bold;">4</span> <br>
-                2. <b>同號 (Group)</b>：不同顏色但數字相同。<br>
-                舉例：<span style="color:#ef4444; font-weight:bold;">7</span>-<span style="color:#eab308; font-weight:bold;">7</span>-<span style="color:#3b82f6; font-weight:bold;">7</span><br><br>
-                
-                <b>🃏 鬼牌 (Joker) 規則：</b><br>
-                貓咪鬼牌可以代替任何顏色或數字。你可以隨意將桌面上現有的牌重新排列組合（拆解、相接），只要你在結束回合時，桌面上所有的牌仍然符合合法組合即可！<br><br>
-                
-                <i>詳細圖文說明：</i>
-            </p>
-            <img src="rummikub_rules.png" style="width:100%; border-radius:8px; margin-top:10px; border:1px solid rgba(255,255,255,0.1);">
-            <button onclick="document.getElementById('rulesModal').style.display='none'" style="margin-top:20px; width:100%; background:#ef4444; padding:12px; color:white; font-size:16px; border-radius:6px; cursor:pointer;">我知道了</button>
+            <img src="rules_run.png" style="width:100%; border-radius:8px; margin:10px 0; border:1px solid rgba(255,255,255,0.15);" onerror="this.style.display='none'">
+            <div style="color:white; line-height:1.9; font-size:15px;">
+                <p style="margin-top:6px;"><b style="color:#38bdf8;">② 同號 (Group)</b> — 不同顏色、相同數字<br>
+                範例：<span style="color:#ef4444;font-size:1.3em;font-weight:bold;">8</span>
+                <span style="color:#2563eb;font-size:1.3em;font-weight:bold;">8</span>
+                <span style="color:#f59e0b;font-size:1.3em;font-weight:bold;">8</span>
+                <span style="color:#444;font-size:1.3em;font-weight:bold;background:white;padding:0 3px;border-radius:2px;">8</span>（四種顏色）</p>
+            </div>
+            <img src="rules_group.png" style="width:100%; border-radius:8px; margin:10px 0; border:1px solid rgba(255,255,255,0.15);" onerror="this.style.display='none'">
+            <div style="color:white; line-height:1.9; font-size:15px;">
+                <p style="margin-top:6px;"><b>🃏 貓咪鬼牌 (Joker)</b><br>
+                可代替任何顏色或數字。<br>
+                也可以把桌面上任意牌拆解、重組，<br>
+                只要回合結束時所有牌組都合法即可。</p>
+                <p style="margin-top:12px; color:#94a3b8; font-size:13px;">💡 每回合若無法出牌，需從公牌堆抽一張牌，回合結束。</p>
+            </div>
+            <button onclick="document.getElementById('rulesModal').style.display='none'" style="margin-top:20px; width:100%; background:#ef4444; padding:12px; color:white; font-size:16px; font-weight:bold; border:none; border-radius:6px; cursor:pointer;">✅ 我知道了！</button>
         </div>
     </div>
 
